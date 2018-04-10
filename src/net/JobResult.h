@@ -30,6 +30,7 @@
 
 
 #include "Job.h"
+#include "net/Protocol.h"
 
 
 class JobResult
@@ -66,14 +67,16 @@ public:
 
     inline uint64_t actualDiff() const
     {
-        return Job::toDiff(reinterpret_cast<const uint64_t*>(result)[3]);
+        return Job::toDiff(reinterpret_cast<const uint64_t*>(result)[0]);
     }
 
 
     int poolId;
     uint32_t diff;
-    uint32_t nonce;
-    uint8_t result[32];
+    // uint32_t nonce;
+    uint64_t nonce;
+    // uint8_t result[32];
+    uint8_t result[LEN::RESULT/2];
     xmrig::Id jobId;
 };
 

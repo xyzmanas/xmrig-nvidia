@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -153,10 +154,12 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
     uint32_t input[21];
 
     memcpy( input, d_input, len );
+    
     //*((uint32_t *)(((char *)input) + 39)) = startNonce + thread;
     uint32_t nonce = startNonce + thread;
     for ( int i = 0; i < sizeof (uint32_t ); ++i )
-        ( ( (char *) input ) + 39 )[i] = ( (char*) ( &nonce ) )[i]; //take care of pointer alignment
+        ( ( (char *) input ) + 64 )[i] = ( (char*) ( &nonce ) )[i]; //take care of pointer alignment
+        // ( ( (char *) input ) + 39 )[i] = ( (char*) ( &nonce ) )[i]; //take care of pointer alignment
 
     cn_keccak( (uint8_t *) input, len, (uint8_t *) ctx_state );
     cryptonight_aes_set_key( ctx_key1, ctx_state );
@@ -251,9 +254,15 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 
     // Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
     // and expect an accurate result for target > 32-bit without implementing carries
-
-    if ( hash[3] < target )
+    uint32_t temp = ((((uint8_t*)(&hash[0]))[0]) << 8) + ((((uint8_t*)(&hash[0]))[1]));
+    uint32_t tempTarget = target;
+    // if ( hash[3] < target )
+    if ( temp < tempTarget )
     {
+        // printf("(%u < %u)\n%u %u %u %u %u %u %u %u\n%" PRIu64 "\n" , temp, tempTarget, ((uint8_t*)(&hash[0]))[0], ((uint8_t*)(&hash[0]))[1], ((uint8_t*)(&hash[0]))[2], ((uint8_t*)(&hash[0]))[3], ((uint8_t*)(&hash[0]))[4], ((uint8_t*)(&hash[0]))[5], ((uint8_t*)(&hash[0]))[6], ((uint8_t*)(&hash[0]))[7], hash[0]);
+        // printf("HASH : %u %u %u %u %u %u %u %u\n", ((uint8_t*)(&hash[0]))[0], ((uint8_t*)(&hash[0]))[1], ((uint8_t*)(&hash[0]))[2], ((uint8_t*)(&hash[0]))[3], ((uint8_t*)(&hash[0]))[4], ((uint8_t*)(&hash[0]))[5], ((uint8_t*)(&hash[0]))[6], ((uint8_t*)(&hash[0]))[7]);
+        // printf("CUDA : %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " (%" PRIu64 ")\n", hash[0], hash[1], hash[2], hash[3], target);
+        
         uint32_t idx = atomicInc( d_res_count, 0xFFFFFFFF );
 
         if(idx < 10)

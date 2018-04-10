@@ -28,6 +28,7 @@
 
 
 #include "net/Job.h"
+#include "log/Log.h"
 
 
 static inline unsigned char hf_hex2bin(char c, bool &err)
@@ -104,17 +105,18 @@ bool Job::setBlob(const char *blob)
     }
 
     m_size /= 2;
-    if (m_size < 76 || m_size >= sizeof(m_blob)) {
+    if (m_size < (LEN::BLOB/2) || m_size >= sizeof(m_blob)) {
         return false;
     }
 
-    if (!fromHex(blob, (int) m_size * 2, m_blob)) {
+    if (!fromHex(blob, (int) m_size*2, m_blob)) {
         return false;
     }
 
     if (*nonce() != 0 && !m_nicehash) {
         m_nicehash = true;
     }
+    m_size = (LEN::BLOB + LEN::NONCE)/2;
 
     return true;
 }
@@ -128,7 +130,19 @@ bool Job::setTarget(const char *target)
 
     const size_t len = strlen(target);
 
-    if (len <= 8) {
+    if( len <= LEN::DIFF) {
+        uint32_t tmp = 0;
+        char str[LEN::DIFF];
+        memset(str, 'f', LEN::DIFF);
+        memcpy(str, target, len);
+
+        if (!fromHex(str, LEN::DIFF, reinterpret_cast<unsigned char*>(&tmp)) || tmp == 0) {
+            return false;
+        }
+
+        m_target = tmp;
+        LOG_INFO("%u", m_target);
+    } else if (len <= 8) {
         uint32_t tmp = 0;
         char str[8];
         memcpy(str, target, len);
@@ -152,7 +166,8 @@ bool Job::setTarget(const char *target)
         return false;
     }
 
-    m_diff = toDiff(m_target);
+    // m_diff = toDiff(m_target);
+    m_diff = m_target;
     return true;
 }
 
@@ -190,7 +205,8 @@ bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
 {
     bool error = false;
     for (unsigned int i = 0; i < len; i += 2) {
-        out[i / 2] = (hf_hex2bin(in[i], error) << 4) | hf_hex2bin(in[i + 1], error);
+        // out[i / 2] = (hf_hex2bin(in[i], error) << 4) | hf_hex2bin(in[i + 1], error);
+        out[(len -i -1) / 2] = (hf_hex2bin(in[i], error) << 4) | (hf_hex2bin(in[i + 1], error) );
 
         if (error) {
             return false;
@@ -199,6 +215,13 @@ bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
     return true;
 }
 
+void Job::toHexLittle(const unsigned char* in, unsigned int len, char* out)
+{
+    for (unsigned int i = 0; i < len; i++) {
+        out[(len - i)*2 - 2] = hf_bin2hex((in[i] & 0xF0) >> 4);
+        out[(len - i)*2 - 1] = hf_bin2hex(in[i] & 0x0F);
+    }
+}
 
 void Job::toHex(const unsigned char* in, unsigned int len, char* out)
 {

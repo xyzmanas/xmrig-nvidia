@@ -33,6 +33,8 @@
 #include "net/Job.h"
 #include "net/JobResult.h"
 #include "Options.h"
+#include "xmrig.h"
+#include "log/Log.h"
 
 
 xmrig::Algo CryptoNight::m_algorithm = xmrig::CRYPTONIGHT;
@@ -41,9 +43,10 @@ xmrig::AlgoVerify CryptoNight::m_av  = xmrig::VERIFY_HW_AES;
 
 bool CryptoNight::hash(const Job &job, JobResult &result, cryptonight_ctx *ctx)
 {
-    fn(job.variant())(job.blob(), job.size(), result.result, ctx);
+    fn(job.variant())(job.blob(), (LEN::BLOB + LEN::NONCE)/2, result.result, ctx);
+    uint32_t diffResult = (result.result[0] << 8) + (result.result[1]);
 
-    return *reinterpret_cast<uint64_t*>(result.result + 24) < job.target();
+    return diffResult < job.target();
 }
 
 

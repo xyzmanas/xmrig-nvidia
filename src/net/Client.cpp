@@ -174,17 +174,23 @@ int64_t Client::submit(const JobResult &result)
     const char *nonce = result.nonce;
     const char *data  = result.result;
 #   else
-    char nonce[9];
-    char data[65];
+    // char nonce[9];
+    // char data[65];
+    char nonce[LEN::NONCE + 1];
+    char data[LEN::RESULT + 1];
 
-    Job::toHex(reinterpret_cast<const unsigned char*>(&result.nonce), 4, nonce);
-    nonce[8] = '\0';
+    // Job::toHex(reinterpret_cast<const unsigned char*>(&result.nonce), 4, nonce);
+    Job::toHexLittle(reinterpret_cast<const unsigned char*>(&result.nonce), LEN::NONCE/2, nonce);
+    // nonce[8] = '\0';
+    nonce[LEN::NONCE] = '\0';
 
-    Job::toHex(result.result, 32, data);
-    data[64] = '\0';
+    // Job::toHex(result.result, 32, data);
+    // data[64] = '\0';
+    Job::toHex(result.result, LEN::RESULT/2, data);
+    data[LEN::RESULT] = '\0';
 #   endif
 
-    const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"id\":%" PRIu64 ",\"jsonrpc\":\"2.0\",\"method\":\"submit\",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
+    const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"method\":\"mining.submit\",\"id\":%" PRIu64 ",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
                                  m_sequence, m_rpcId.data(), result.jobId.data(), nonce, data);
 
 #   ifdef XMRIG_PROXY_PROJECT
@@ -237,10 +243,10 @@ bool Client::isCriticalError(const char *message)
 
 bool Client::parseJob(const rapidjson::Value &params, int *code)
 {
-    if (!params.IsObject()) {
-        *code = 2;
-        return false;
-    }
+    // if (!params.IsObject()) {
+    //     *code = 2;
+    //     return false;
+    // }
 
 #   ifdef XMRIG_PROXY_PROJECT
     Job job(m_id, m_url.variant());
@@ -250,17 +256,17 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     Job job(m_id, m_nicehash, m_url.algo(), m_url.variant());
 #   endif
 
-    if (!job.setId(params["job_id"].GetString())) {
+    if (!job.setId(params[NOTI::JOB_ID].GetString())) {
         *code = 3;
         return false;
     }
 
-    if (!job.setBlob(params["blob"].GetString())) {
+    if (!job.setBlob(params[NOTI::BLOB].GetString())) {
         *code = 4;
         return false;
     }
 
-    if (!job.setTarget(params["target"].GetString())) {
+    if (!job.setTarget(params[NOTI::TARGET].GetString())) {
         *code = 5;
         return false;
     }
@@ -339,7 +345,7 @@ int Client::resolve(const char *host)
 
 int64_t Client::send(size_t size)
 {
-    LOG_DEBUG("[%s:%u] send (%d bytes): \"%s\"", m_url.host(), m_url.port(), size, m_sendBuf);
+    LOG_INFO("[%s:%u] send (%d bytes): \"%s\"", m_url.host(), m_url.port(), size, m_sendBuf);
     if (state() != ConnectedState || !uv_is_writable(m_stream)) {
         LOG_DEBUG_ERR("[%s:%u] send failed, invalid state: %d", m_url.host(), m_url.port(), m_state);
         return -1;
@@ -401,38 +407,9 @@ void Client::connect(sockaddr *addr)
 
 void Client::login()
 {
-    m_results.clear();
-
-    rapidjson::Document doc;
-    doc.SetObject();
-
-    auto &allocator = doc.GetAllocator();
-
-    doc.AddMember("id",      1,       allocator);
-    doc.AddMember("jsonrpc", "2.0",   allocator);
-    doc.AddMember("method",  "login", allocator);
-
-    rapidjson::Value params(rapidjson::kObjectType);
-    params.AddMember("login", rapidjson::StringRef(m_url.user()),     allocator);
-    params.AddMember("pass",  rapidjson::StringRef(m_url.password()), allocator);
-    params.AddMember("agent", rapidjson::StringRef(m_agent),          allocator);
-
-    doc.AddMember("params", params, allocator);
-
-    rapidjson::StringBuffer buffer(0, 512);
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    doc.Accept(writer);
-
-    const size_t size = buffer.GetSize();
-    if (size > (sizeof(m_buf) - 2)) {
-        return;
-    }
-
-    memcpy(m_sendBuf, buffer.GetString(), size);
-    m_sendBuf[size]     = '\n';
-    m_sendBuf[size + 1] = '\0';
-
-    send(size + 1);
+    sendSubscribe();
+ 
+    sendAuthorize();   
 }
 
 
@@ -454,7 +431,7 @@ void Client::parse(char *line, size_t len)
 
     line[len - 1] = '\0';
 
-    LOG_DEBUG("[%s:%u] received (%d bytes): \"%s\"", m_url.host(), m_url.port(), len, line);
+    LOG_INFO("[%s:%u] received (%d bytes): \"%s\"", m_url.host(), m_url.port(), len, line);
 
     if (len < 32 || line[0] != '{') {
         if (!m_quiet) {
@@ -473,9 +450,9 @@ void Client::parse(char *line, size_t len)
         return;
     }
 
-    if (!doc.IsObject()) {
-        return;
-    }
+    // if (!doc.IsObject()) {
+    //     return;
+    // }
 
     const rapidjson::Value &id = doc["id"];
     if (id.IsInt64()) {
@@ -518,7 +495,7 @@ void Client::parseNotification(const char *method, const rapidjson::Value &param
         return;
     }
 
-    if (strcmp(method, "job") == 0) {
+    if (strcmp(method, "mining.notify") == 0) {
         int code = -1;
         if (parseJob(params, &code)) {
             m_listener->onJobReceived(this, m_job);
@@ -553,31 +530,37 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
         return;
     }
 
-    if (!result.IsObject()) {
-        return;
-    }
+    // if (!result.IsObject()) {
+    //     return;
+    // }
 
     if (id == 1) {
         int code = -1;
-        if (!parseLogin(result, &code)) {
-            if (!m_quiet) {
-                LOG_ERR("[%s:%u] login error code: %d", m_url.host(), m_url.port(), code);
-            }
+        // if (!parseLogin(result, &code)) {
+        //     if (!m_quiet) {
+        //         LOG_ERR("[%s:%u] login error code: %d", m_url.host(), m_url.port(), code);
+        //     }
 
-            close();
-            return;
-        }
+        //     close();
+        //     return;
+        // }
 
         m_failures = 0;
         m_listener->onLoginSuccess(this);
-        m_listener->onJobReceived(this, m_job);
+        // m_listener->onJobReceived(this, m_job);
         return;
     }
 
     auto it = m_results.find(id);
     if (it != m_results.end()) {
         it->second.done();
-        m_listener->onResultAccepted(this, it->second, nullptr);
+
+        if(result.GetBool()) {
+            m_listener->onResultAccepted(this, it->second, nullptr);    
+        } else {
+            m_listener->onResultAccepted(this, it->second, "Diff");
+        }
+
         m_results.erase(it);
     }
 }
@@ -785,4 +768,84 @@ void Client::onResolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
 
     client->connect(ipv4, ipv6);
     uv_freeaddrinfo(res);
+}
+
+void Client::sendSubscribe() 
+{
+    m_results.clear();
+
+    // // Subscribe----------
+    rapidjson::Document doc1;
+    doc1.SetObject();
+
+    auto &allocator1 = doc1.GetAllocator();
+
+    doc1.AddMember("method", "mining.subscribe", allocator1);
+    doc1.AddMember("id", 1, allocator1);
+
+    rapidjson::Value params1(rapidjson::kArrayType);
+    params1.PushBack("Node.js Stratum", allocator1);
+
+    doc1.AddMember("params", params1, allocator1);
+
+    rapidjson::StringBuffer buffer1(0, 512);
+    rapidjson::Writer<rapidjson::StringBuffer> writer1(buffer1);
+    doc1.Accept(writer1);
+
+    const size_t size1 = buffer1.GetSize();
+    if (size1 > (sizeof(m_buf) - 2)) {
+        return;
+    }
+
+    memcpy(m_sendBuf, buffer1.GetString(), size1);
+    m_sendBuf[size1]     = '\n';
+    m_sendBuf[size1 + 1] = '\0';
+
+    send(size1 + 1);
+}
+
+void Client::sendAuthorize() 
+{
+    rapidjson::Document doc;
+    doc.SetObject();
+
+    auto &allocator = doc.GetAllocator();
+
+    doc.AddMember("method",  "mining.authorize", allocator);
+    doc.AddMember("id",      1,       allocator);
+    // doc.AddMember("jsonrpc", "2.0",   allocator);
+
+    rapidjson::Value params(rapidjson::kArrayType);
+    // params.AddMember("user", rapidjson::StringRef(m_url.user()),     allocator);
+    // params.AddMember("passwd",  rapidjson::StringRef(m_url.password()), allocator);
+
+    params.PushBack(rapidjson::StringRef(m_url.user()), allocator);
+    params.PushBack(rapidjson::StringRef(m_url.password()), allocator);
+    // params.AddMember("0", "user",     allocator);
+    // params.AddMember("1",  "pass", allocator);
+
+    // params.AddMember("", rapidjson::StringRef(m_agent),          allocator);
+
+    // doc.AddMember("method", "mining.subscribe", allocator);
+    // doc.AddMember("id", 1, allocator);
+
+    // rapidjson::Value params(rapidjson::kObjectType);
+    // params.AddMember("", rapidjson::StringRef("Node.js Stratum"), allocator);
+
+    doc.AddMember("params", params, allocator);
+
+    rapidjson::StringBuffer buffer(0, 512);
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    const size_t size = buffer.GetSize();
+    if (size > (sizeof(m_buf) - 2)) {
+        return;
+    }
+
+    memcpy(m_sendBuf, buffer.GetString(), size);
+    m_sendBuf[size]     = '\n';
+    m_sendBuf[size + 1] = '\0';
+
+    send(size + 1);
 }
