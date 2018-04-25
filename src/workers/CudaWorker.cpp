@@ -7,6 +7,7 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -32,6 +33,7 @@
 #include "workers/GpuThread.h"
 #include "workers/Handle.h"
 #include "workers/Workers.h"
+#include "log/Log.h"
 
 
 CudaWorker::CudaWorker(Handle *handle) :
@@ -79,7 +81,7 @@ void CudaWorker::start()
             consumeJob();
         }
 
-        cryptonight_extra_cpu_set_data(&m_ctx, m_job.blob(), (LEN::BLOB + LEN::NONCE)/2);
+        cryptonight_extra_cpu_set_data(&m_ctx, m_job.blob(), LEN::BLOB);
 
         while (!Workers::isOutdated(m_sequence)) {
             uint32_t foundNonce[10];

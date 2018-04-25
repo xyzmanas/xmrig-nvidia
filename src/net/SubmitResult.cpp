@@ -28,7 +28,7 @@
 #include "net/SubmitResult.h"
 
 
-SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint64_t actualDiff) :
+SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint32_t actualDiff) :
     seq(seq),
     diff(diff),
     actualDiff(actualDiff),

@@ -7,6 +7,7 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -105,7 +106,7 @@ bool Job::setBlob(const char *blob)
     }
 
     m_size /= 2;
-    if (m_size < (LEN::BLOB/2) || m_size >= sizeof(m_blob)) {
+    if (m_size < LEN::PREHASH || m_size >= sizeof(m_blob)) {
         return false;
     }
 
@@ -116,7 +117,7 @@ bool Job::setBlob(const char *blob)
     if (*nonce() != 0 && !m_nicehash) {
         m_nicehash = true;
     }
-    m_size = (LEN::BLOB + LEN::NONCE)/2;
+    m_size = LEN::BLOB_HEX;
 
     return true;
 }
@@ -130,18 +131,17 @@ bool Job::setTarget(const char *target)
 
     const size_t len = strlen(target);
 
-    if( len <= LEN::DIFF) {
+    if( len <= LEN::DIFF_HEX) {
         uint32_t tmp = 0;
-        char str[LEN::DIFF];
-        memset(str, 'f', LEN::DIFF);
+        char str[LEN::DIFF_HEX];
+        memset(str, 'f', LEN::DIFF_HEX);
         memcpy(str, target, len);
 
-        if (!fromHex(str, LEN::DIFF, reinterpret_cast<unsigned char*>(&tmp)) || tmp == 0) {
+        if (!fromHex(str, LEN::DIFF_HEX, reinterpret_cast<unsigned char*>(&tmp)) || tmp == 0) {
             return false;
         }
 
         m_target = tmp;
-        LOG_INFO("%u", m_target);
     } else if (len <= 8) {
         uint32_t tmp = 0;
         char str[8];
@@ -166,7 +166,6 @@ bool Job::setTarget(const char *target)
         return false;
     }
 
-    // m_diff = toDiff(m_target);
     m_diff = m_target;
     return true;
 }
@@ -205,7 +204,6 @@ bool Job::fromHex(const char* in, unsigned int len, unsigned char* out)
 {
     bool error = false;
     for (unsigned int i = 0; i < len; i += 2) {
-        // out[i / 2] = (hf_hex2bin(in[i], error) << 4) | hf_hex2bin(in[i + 1], error);
         out[(len -i -1) / 2] = (hf_hex2bin(in[i], error) << 4) | (hf_hex2bin(in[i + 1], error) );
 
         if (error) {

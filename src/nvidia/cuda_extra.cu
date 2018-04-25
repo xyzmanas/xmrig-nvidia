@@ -7,6 +7,7 @@
 * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
 * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
 * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+* Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -155,11 +156,9 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 
     memcpy( input, d_input, len );
     
-    //*((uint32_t *)(((char *)input) + 39)) = startNonce + thread;
     uint32_t nonce = startNonce + thread;
     for ( int i = 0; i < sizeof (uint32_t ); ++i )
         ( ( (char *) input ) + 64 )[i] = ( (char*) ( &nonce ) )[i]; //take care of pointer alignment
-        // ( ( (char *) input ) + 39 )[i] = ( (char*) ( &nonce ) )[i]; //take care of pointer alignment
 
     cn_keccak( (uint8_t *) input, len, (uint8_t *) ctx_state );
     cryptonight_aes_set_key( ctx_key1, ctx_state );
@@ -256,17 +255,14 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
     // and expect an accurate result for target > 32-bit without implementing carries
     uint32_t temp = ((((uint8_t*)(&hash[0]))[0]) << 8) + ((((uint8_t*)(&hash[0]))[1]));
     uint32_t tempTarget = target;
-    // if ( hash[3] < target )
     if ( temp < tempTarget )
     {
-        // printf("(%u < %u)\n%u %u %u %u %u %u %u %u\n%" PRIu64 "\n" , temp, tempTarget, ((uint8_t*)(&hash[0]))[0], ((uint8_t*)(&hash[0]))[1], ((uint8_t*)(&hash[0]))[2], ((uint8_t*)(&hash[0]))[3], ((uint8_t*)(&hash[0]))[4], ((uint8_t*)(&hash[0]))[5], ((uint8_t*)(&hash[0]))[6], ((uint8_t*)(&hash[0]))[7], hash[0]);
-        // printf("HASH : %u %u %u %u %u %u %u %u\n", ((uint8_t*)(&hash[0]))[0], ((uint8_t*)(&hash[0]))[1], ((uint8_t*)(&hash[0]))[2], ((uint8_t*)(&hash[0]))[3], ((uint8_t*)(&hash[0]))[4], ((uint8_t*)(&hash[0]))[5], ((uint8_t*)(&hash[0]))[6], ((uint8_t*)(&hash[0]))[7]);
-        // printf("CUDA : %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " (%" PRIu64 ")\n", hash[0], hash[1], hash[2], hash[3], target);
-        
         uint32_t idx = atomicInc( d_res_count, 0xFFFFFFFF );
 
-        if(idx < 10)
+        if(idx < 10) {
             d_res_nonce[idx] = thread;
+            printf("[%u][%d] %016llx %016llx %016llx %016llx\n", d_res_nonce[idx], thread, hash[0], hash[1], hash[2], hash[3]); 
+        }
     }
 }
 

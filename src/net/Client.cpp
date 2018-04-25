@@ -6,6 +6,7 @@
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+ * Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -174,20 +175,15 @@ int64_t Client::submit(const JobResult &result)
     const char *nonce = result.nonce;
     const char *data  = result.result;
 #   else
-    // char nonce[9];
-    // char data[65];
-    char nonce[LEN::NONCE + 1];
-    char data[LEN::RESULT + 1];
 
-    // Job::toHex(reinterpret_cast<const unsigned char*>(&result.nonce), 4, nonce);
-    Job::toHexLittle(reinterpret_cast<const unsigned char*>(&result.nonce), LEN::NONCE/2, nonce);
-    // nonce[8] = '\0';
-    nonce[LEN::NONCE] = '\0';
+    char nonce[LEN::NONCE_HEX + 1];
+    char data[LEN::RESULT_HEX + 1];
 
-    // Job::toHex(result.result, 32, data);
-    // data[64] = '\0';
-    Job::toHex(result.result, LEN::RESULT/2, data);
-    data[LEN::RESULT] = '\0';
+    Job::toHexLittle(reinterpret_cast<const unsigned char*>(&result.nonce), LEN::NONCE, nonce);
+    nonce[LEN::NONCE_HEX] = '\0';
+
+    Job::toHex(result.result, LEN::RESULT, data);
+    data[LEN::RESULT_HEX] = '\0';
 #   endif
 
     const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"method\":\"mining.submit\",\"id\":%" PRIu64 ",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
@@ -243,11 +239,6 @@ bool Client::isCriticalError(const char *message)
 
 bool Client::parseJob(const rapidjson::Value &params, int *code)
 {
-    // if (!params.IsObject()) {
-    //     *code = 2;
-    //     return false;
-    // }
-
 #   ifdef XMRIG_PROXY_PROJECT
     Job job(m_id, m_url.variant());
     job.setClientId(m_rpcId);
@@ -450,10 +441,6 @@ void Client::parse(char *line, size_t len)
         return;
     }
 
-    // if (!doc.IsObject()) {
-    //     return;
-    // }
-
     const rapidjson::Value &id = doc["id"];
     if (id.IsInt64()) {
         parseResponse(id.GetInt64(), doc["result"], doc["error"]);
@@ -530,24 +517,11 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
         return;
     }
 
-    // if (!result.IsObject()) {
-    //     return;
-    // }
-
     if (id == 1) {
         int code = -1;
-        // if (!parseLogin(result, &code)) {
-        //     if (!m_quiet) {
-        //         LOG_ERR("[%s:%u] login error code: %d", m_url.host(), m_url.port(), code);
-        //     }
-
-        //     close();
-        //     return;
-        // }
 
         m_failures = 0;
         m_listener->onLoginSuccess(this);
-        // m_listener->onJobReceived(this, m_job);
         return;
     }
 
@@ -558,7 +532,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
         if(result.GetBool()) {
             m_listener->onResultAccepted(this, it->second, nullptr);    
         } else {
-            m_listener->onResultAccepted(this, it->second, "Diff");
+            m_listener->onResultAccepted(this, it->second, "Nonce is different.");
         }
 
         m_results.erase(it);
@@ -774,7 +748,6 @@ void Client::sendSubscribe()
 {
     m_results.clear();
 
-    // // Subscribe----------
     rapidjson::Document doc1;
     doc1.SetObject();
 
@@ -813,24 +786,11 @@ void Client::sendAuthorize()
 
     doc.AddMember("method",  "mining.authorize", allocator);
     doc.AddMember("id",      1,       allocator);
-    // doc.AddMember("jsonrpc", "2.0",   allocator);
 
     rapidjson::Value params(rapidjson::kArrayType);
-    // params.AddMember("user", rapidjson::StringRef(m_url.user()),     allocator);
-    // params.AddMember("passwd",  rapidjson::StringRef(m_url.password()), allocator);
 
     params.PushBack(rapidjson::StringRef(m_url.user()), allocator);
     params.PushBack(rapidjson::StringRef(m_url.password()), allocator);
-    // params.AddMember("0", "user",     allocator);
-    // params.AddMember("1",  "pass", allocator);
-
-    // params.AddMember("", rapidjson::StringRef(m_agent),          allocator);
-
-    // doc.AddMember("method", "mining.subscribe", allocator);
-    // doc.AddMember("id", 1, allocator);
-
-    // rapidjson::Value params(rapidjson::kObjectType);
-    // params.AddMember("", rapidjson::StringRef("Node.js Stratum"), allocator);
 
     doc.AddMember("params", params, allocator);
 
