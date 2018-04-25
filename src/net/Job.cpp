@@ -170,6 +170,41 @@ bool Job::setTarget(const char *target)
     return true;
 }
 
+bool Job::setJobId(const char *id)
+{
+    if(!id) {
+        return false; 
+    }
+    const size_t jobIdLen = strlen(id);
+    if(jobIdLen != LEN::NONCE_HEX){
+        return false;
+    }
+    char jobId[LEN::NONCE_HEX+1];
+    memset(jobId, 0, LEN::NONCE_HEX+1);
+    memcpy(jobId, id, jobIdLen);
+
+    if(!fromHex(jobId, jobIdLen, reinterpret_cast<unsigned char*>(&m_jobId))){
+        return false;
+    }
+    return true;
+}
+
+bool Job::setJobUnit(const char *unit){
+    if(!unit) {
+        return false; 
+    }
+
+    const size_t unitLen = strlen(unit);
+
+    char jobUnit[unitLen+1];
+    memset(jobUnit, 0, unitLen+1);
+    memcpy(jobUnit, unit, unitLen);
+
+    if(!fromHex(jobUnit, unitLen, reinterpret_cast<unsigned char*>(&m_jobUnit)) || m_jobUnit == 0){
+        return false;
+    }
+    return true;
+}
 
 void Job::setCoin(const char *coin)
 {

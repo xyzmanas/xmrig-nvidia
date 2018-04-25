@@ -23,6 +23,7 @@ public:
     static const int JOB_ID = 0;
     static const int BLOB = 1;
     static const int TARGET = 2;
+    static const int JOB_UNIT = 3;
 };
 
 class LEN

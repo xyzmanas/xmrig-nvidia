@@ -247,10 +247,10 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     Job job(m_id, m_nicehash, m_url.algo(), m_url.variant());
 #   endif
 
-    if (!job.setId(params[NOTI::JOB_ID].GetString())) {
-        *code = 3;
+    if (!job.setJobId(params[NOTI::JOB_ID].GetString())) {
+        *code = 5;
         return false;
-    }
+     }
 
     if (!job.setBlob(params[NOTI::BLOB].GetString())) {
         *code = 4;
@@ -259,6 +259,11 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
 
     if (!job.setTarget(params[NOTI::TARGET].GetString())) {
         *code = 5;
+        return false;
+    }
+
+    if(!job.setJobUnit(params[NOTI::JOB_UNIT].GetString())){
+        *code = 6;
         return false;
     }
 
@@ -336,7 +341,7 @@ int Client::resolve(const char *host)
 
 int64_t Client::send(size_t size)
 {
-    LOG_INFO("[%s:%u] send (%d bytes): \"%s\"", m_url.host(), m_url.port(), size, m_sendBuf);
+    LOG_DEBUG("[%s:%u] send (%d bytes): \"%s\"", m_url.host(), m_url.port(), size, m_sendBuf);
     if (state() != ConnectedState || !uv_is_writable(m_stream)) {
         LOG_DEBUG_ERR("[%s:%u] send failed, invalid state: %d", m_url.host(), m_url.port(), m_state);
         return -1;
@@ -422,7 +427,7 @@ void Client::parse(char *line, size_t len)
 
     line[len - 1] = '\0';
 
-    LOG_INFO("[%s:%u] received (%d bytes): \"%s\"", m_url.host(), m_url.port(), len, line);
+    LOG_DEBUG("[%s:%u] received (%d bytes): \"%s\"", m_url.host(), m_url.port(), len, line);
 
     if (len < 32 || line[0] != '{') {
         if (!m_quiet) {
@@ -518,8 +523,6 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
     }
 
     if (id == 1) {
-        int code = -1;
-
         m_failures = 0;
         m_listener->onLoginSuccess(this);
         return;

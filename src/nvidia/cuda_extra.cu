@@ -134,7 +134,7 @@ __device__ __forceinline__ void mix_and_propagate( uint32_t* state )
 }
 
 template<xmrig::Algo ALGO>
-__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint32_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_state2, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
+__global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restrict__ d_input, uint32_t len, uint64_t startNonce, uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_state2, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b, uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2 )
 {
     int thread = ( blockDim.x * blockIdx.x + threadIdx.x );
     __shared__ uint32_t sharedMemory[1024];
@@ -152,13 +152,15 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
     uint32_t ctx_b[4];
     uint32_t ctx_key1[40];
     uint32_t ctx_key2[40];
-    uint32_t input[21];
+    uint32_t input[18];
 
     memcpy( input, d_input, len );
     
-    uint32_t nonce = startNonce + thread;
-    for ( int i = 0; i < sizeof (uint32_t ); ++i )
+    uint64_t nonce = startNonce + thread;
+    
+    for ( int i = 0; i < sizeof (uint64_t ); ++i ) {
         ( ( (char *) input ) + 64 )[i] = ( (char*) ( &nonce ) )[i]; //take care of pointer alignment
+    }
 
     cn_keccak( (uint8_t *) input, len, (uint8_t *) ctx_state );
     cryptonight_aes_set_key( ctx_key1, ctx_state );
@@ -191,7 +193,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 }
 
 template<xmrig::Algo ALGO>
-__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint32_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
+__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint64_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
 {
     const int thread = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -261,7 +263,6 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 
         if(idx < 10) {
             d_res_nonce[idx] = thread;
-            printf("[%u][%d] %016llx %016llx %016llx %016llx\n", d_res_nonce[idx], thread, hash[0], hash[1], hash[2], hash[3]); 
         }
     }
 }
@@ -326,15 +327,15 @@ int cryptonight_extra_cpu_init(nvid_ctx *ctx, xmrig::Algo algo, size_t hashMemSi
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_a, 4 * sizeof(uint32_t) * wsize));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_ctx_b, ctx_b_size));
     // POW block format http://monero.wikia.com/wiki/PoW_Block_Header_Format
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 21 * sizeof (uint32_t ) ));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_input, 18 * sizeof (uint32_t ) ));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_count, sizeof (uint32_t ) ));
-    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint32_t ) ));
+    CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_result_nonce, 10 * sizeof (uint64_t ) ));
     CUDA_CHECK(ctx->device_id, cudaMalloc(&ctx->d_long_state, hashMemSize * wsize));
     return 1;
 }
 
 
-void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint64_t startNonce, xmrig::Algo algo)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -357,7 +358,7 @@ void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrig::Al
     }
 }
 
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, xmrig::Algo algo)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -365,7 +366,7 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t ta
     dim3 grid( ( wsize + threadsperblock - 1 ) / threadsperblock );
     dim3 block( threadsperblock );
 
-    CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_nonce, 0xFF, 10 * sizeof(uint32_t)));
+    CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_nonce, 0xFF, 10 * sizeof(uint64_t)));
     CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_count, 0, sizeof(uint32_t)));
 
     if (algo == xmrig::CRYPTONIGHT_HEAVY) {
@@ -376,7 +377,7 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t ta
     }
 
     CUDA_CHECK(ctx->device_id, cudaMemcpy(rescount, ctx->d_result_count, sizeof(uint32_t), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(ctx->device_id, cudaMemcpy(resnonce, ctx->d_result_nonce, 10 * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(ctx->device_id, cudaMemcpy(resnonce, ctx->d_result_nonce, 10 * sizeof(uint64_t), cudaMemcpyDeviceToHost));
 
     /* There is only a 32bit limit for the counter on the device side
     * therefore this value can be greater than 10, in that case limit rescount

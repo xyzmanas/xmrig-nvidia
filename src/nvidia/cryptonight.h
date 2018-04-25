@@ -50,7 +50,7 @@ typedef struct {
     uint32_t *d_input;
     uint32_t inputlen;
     uint32_t *d_result_count;
-    uint32_t *d_result_nonce;
+    uint64_t *d_result_nonce;
     uint32_t *d_long_state;
     uint32_t *d_ctx_state;
     uint32_t *d_ctx_state2;
@@ -68,6 +68,6 @@ int cuda_get_runtime_version();
 int cuda_get_deviceinfo(nvid_ctx *ctx, xmrig::Algo algo);
 int cryptonight_gpu_init(nvid_ctx *ctx, xmrig::Algo algo);
 void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, uint32_t len);
-void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint32_t startNonce, xmrig::Algo algo);
-void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t startNonce);
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint32_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, xmrig::Algo algo);
+void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint64_t startNonce, xmrig::Algo algo);
+void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint64_t startNonce);
+void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo);

@@ -84,7 +84,7 @@ void CudaWorker::start()
         cryptonight_extra_cpu_set_data(&m_ctx, m_job.blob(), LEN::BLOB);
 
         while (!Workers::isOutdated(m_sequence)) {
-            uint32_t foundNonce[10];
+            uint64_t foundNonce[10];
             uint32_t foundCount;
   
             cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm);
@@ -138,10 +138,10 @@ void CudaWorker::consumeJob()
     m_job.setThreadId(m_id);
 
     if (m_job.isNicehash()) {
-        m_nonce = (*m_job.nonce() & 0xff000000U) + (0xffffffU / m_threads * m_id);
+        m_nonce = (*m_job.nonce() & 0xff000000U) + (0xffffffffffffffU / m_threads * m_id);
     }
     else {
-        m_nonce = 0xffffffffU / m_threads * m_id;
+        m_nonce = m_job.jobId() + (m_job.jobUnit() / m_threads * m_id);
     }
 }
 

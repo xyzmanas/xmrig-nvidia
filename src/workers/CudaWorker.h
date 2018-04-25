@@ -64,7 +64,7 @@ private:
     nvid_ctx m_ctx;
     std::atomic<uint64_t> m_hashCount;
     std::atomic<uint64_t> m_timestamp;
-    uint32_t m_nonce;
+    uint64_t m_nonce;
     uint32_t m_pausedNonce;
     uint64_t m_count;
     uint64_t m_sequence;
