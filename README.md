@@ -1,8 +1,8 @@
-# HYCminer AMD
+# HYCminer NVIDIA
 
-HYCminer is a high performance Hycon (HYC) OpenCL miner, forked from [XMRig](https://github.com/xmrig/xmrig) release v2.6.1.
+HYCminer is a high performance Hycon (HYC) NVIDIA miner, forked from [XMRig](https://github.com/xmrig/xmrig) release v2.6.1.
 
-* This is the **AMD GPU** mining version, there is also a [CPU version](https://bitbucket.org/glosfer/cpu-miner) and [NVIDIA GPU version](https://bitbucket.org/glosfer/miner-nvidia).
+* This is the **NVIDIA GPU** mining version, there is also a [CPU version](https://github.com/team-hycon/xmrig) and [AMD GPU version](https://github.com/team-hycon/xmrig-amd).
 * We plan on releasing our roadmap for next releases soon.
 
 #### Table of contents
@@ -10,7 +10,7 @@ HYCminer is a high performance Hycon (HYC) OpenCL miner, forked from [XMRig](htt
 * [Download](#download)
 * [Usage](#usage)
 * [Algorithm variations](#algorithm-variations)
-* [Build](https://bitbucket.org/glosfer/miner-amd/wiki/Build)
+* [Build](https://github.com/team-hycon/xmrig-nvidia/wiki/Build)
 * [Common Issues](#common-issues)
 * [Other information](#other-information)
 * [Contacts](#contacts)
@@ -28,8 +28,8 @@ HYCminer is a high performance Hycon (HYC) OpenCL miner, forked from [XMRig](htt
 
 ## Download
 * Binary releases: TBA
-* Git tree: https://bitbucket.org/glosfer/miner-amd.git
-    * Clone with `git clone https://bitbucket.org/glosfer/miner-amd.git` :hammer: [Build instructions](https://bitbucket.org/glosfer/miner-nvidia/wiki/Build).
+* Git tree: https://github.com/team-hycon/xmrig-nvidia.git
+    * Clone with `git clone https://github.com/team-hycon/xmrig-nvidia.git` :hammer: [Build instructions](https://github.com/team-hycon/xmrig-nvidia/wiki/Build).
 
 ## Usage
 See the example `config.json` to configure the miner.
@@ -44,16 +44,19 @@ See the example `config.json` to configure the miner.
   -k, --keepalive           send keepalived for prevent timeout (need pool support)
   -r, --retries=N           number of times to retry before switch to backup server (default: 5)
   -R, --retry-pause=N       time to pause between retries (default: 5)
-      --opencl-devices=N    list of OpenCL devices to use.
-      --opencl-launch=IxW   list of launch config, intensity and worksize
-      --opencl-affinity=N   affine GPU threads to a CPU
-      --opencl-platform=N   OpenCL platform index
+      --cuda-devices=N      List of CUDA devices to use.
+      --cuda-launch=TxB     List of launch config for the CryptoNight kernel
+      --cuda-max-threads=N  limit maximum count of GPU threads in automatic mode
+      --cuda-bfactor=[0-12] run CryptoNight core kernel in smaller pieces
+      --cuda-bsleep=N       insert a delay of N microseconds between kernel launches
+      --cuda-affinity=N     affine GPU threads to a CPU
       --no-color            disable colored output
       --donate-level=N      donate level, default 5% (5 minutes in 100 minutes)
       --user-agent          set custom user-agent string for pool
   -B, --background          run the miner in the background
   -c, --config=FILE         load a JSON-format configuration file
   -l, --log-file=FILE       log all output to a file
+  -S, --syslog              use system log for output messages
       --nicehash            enable nicehash support
       --print-time=N        print hashrate report every N seconds
       --api-port=N          port for the miner API
