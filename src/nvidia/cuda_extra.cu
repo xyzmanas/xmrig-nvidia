@@ -358,7 +358,7 @@ void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint64_t startNonce, xmrig::Al
     }
 }
 
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target, uint32_t* rescount, uint32_t *resnonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
