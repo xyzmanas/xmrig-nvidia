@@ -7,6 +7,7 @@
 * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
 * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
 * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+* Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -227,7 +228,7 @@ template<size_t ITERATIONS, uint32_t MEM, uint32_t MASK, xmrig::Algo ALGO, uint8
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
 __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
-        uint32_t startNonce, uint32_t * __restrict__ d_input )
+        uint32_t moneroNonce, uint32_t * __restrict__ d_input )
 {
     __shared__ uint32_t sharedMemory[1024];
 
@@ -236,7 +237,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
     __syncthreads( );
 
     const int thread = ( blockDim.x * blockIdx.x + threadIdx.x ) >> 2;
-    const uint32_t nonce = startNonce + thread;
+    const uint32_t nonce = moneroNonce;
     const int sub = threadIdx.x & 3;
     const int sub2 = sub & 2;
 
@@ -495,31 +496,31 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 }
 
 
-void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint64_t startNonce)
+void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t moneroNonce)
 {
     using namespace xmrig;
 
     switch (algo) {
     case CRYPTONIGHT:
         if (variant > 0) {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 1>(ctx, startNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 1>(ctx, moneroNonce);
         }
         else {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 0>(ctx, startNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 0>(ctx, moneroNonce);
         }
         break;
 
     case CRYPTONIGHT_LITE:
         if (variant > 0) {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 1>(ctx, startNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 1>(ctx, moneroNonce);
         }
         else {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 0>(ctx, startNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 0>(ctx, moneroNonce);
         }
         break;
 
     case CRYPTONIGHT_HEAVY:
-        cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY / 4, CRYPTONIGHT_HEAVY, 0>(ctx, startNonce);
+        cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY / 4, CRYPTONIGHT_HEAVY, 0>(ctx, moneroNonce);
         break;
     }
 }

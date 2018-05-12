@@ -7,6 +7,7 @@
 * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
 * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
 * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
+* Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -69,5 +70,5 @@ int cuda_get_deviceinfo(nvid_ctx *ctx, xmrig::Algo algo);
 int cryptonight_gpu_init(nvid_ctx *ctx, xmrig::Algo algo);
 void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, uint32_t len);
 void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint64_t startNonce, xmrig::Algo algo);
-void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint64_t startNonce);
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo);
+void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t moneroNonce);
+void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target1, uint64_t target2, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo);

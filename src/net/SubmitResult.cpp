@@ -5,6 +5,7 @@
  * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
  * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
  * Copyright 2016-2017 XMRig       <support@xmrig.com>
+ * Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
  *
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -28,7 +29,7 @@
 #include "net/SubmitResult.h"
 
 
-SubmitResult::SubmitResult(int64_t seq, uint32_t diff, uint32_t actualDiff) :
+SubmitResult::SubmitResult(int64_t seq, uint64_t diff, uint64_t actualDiff) :
     seq(seq),
     diff(diff),
     actualDiff(actualDiff),
