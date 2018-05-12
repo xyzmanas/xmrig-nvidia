@@ -5,7 +5,7 @@ option(WITH_AEON  "CryptoNight-Lite support" ON)
 option(WITH_HTTPD "HTTP REST API" ON)
 
 include (CheckIncludeFile)
-
+configure_file (config.json config.json COPYONLY)
 
 set(HEADERS
     src/api/Api.h
