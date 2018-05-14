@@ -247,8 +247,8 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     Job job(m_id, m_nicehash, m_url.algo(), m_url.variant());
 #   endif
 
-    if (!job.setJobId(params[NOTI::JOB_ID].GetString())) {
-        *code = 5;
+    if (!job.setJobId(params[NOTI::JOB_ID].GetInt(), params[NOTI::MINER_CNT].GetInt())) { 
+        *code = 3;
         return false;
      }
 
@@ -259,11 +259,6 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
 
     if (!job.setTarget(params[NOTI::TARGET].GetString(), params[NOTI::TARGET_0_CNT].GetInt())) {
         *code = 5;
-        return false;
-    }
-
-    if(!job.setJobUnit(params[NOTI::JOB_UNIT].GetString())){
-        *code = 6;
         return false;
     }
 
