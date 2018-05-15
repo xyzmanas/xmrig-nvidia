@@ -262,14 +262,6 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         return false;
     }
 
-    if (params.HasMember("coin")) {
-        job.setCoin(params["coin"].GetString());
-    }
-
-    if (params.HasMember("variant")) {
-        job.setVariant(params["variant"].GetInt());
-    }
-
     if (m_job != job) {
         m_jobs++;
         m_job = std::move(job);
