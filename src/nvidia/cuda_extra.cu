@@ -193,7 +193,7 @@ __global__ void cryptonight_extra_gpu_prepare( int threads, uint32_t * __restric
 }
 
 template<xmrig::Algo ALGO>
-__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target1, uint64_t target2, uint32_t* __restrict__ d_res_count, uint64_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
+__global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint32_t* __restrict__ d_res_count, uint64_t * __restrict__ d_res_nonce, uint32_t * __restrict__ d_ctx_state,uint32_t * __restrict__ d_ctx_key2 )
 {
     const int thread = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -255,7 +255,7 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target1, uint
 
     // Note that comparison is equivalent to subtraction - we can't just compare 8 32-bit values
     // and expect an accurate result for target > 32-bit without implementing carries
-    if((hash[3] < target1) || ((hash[3] < target1) && (hash[2] < target2)))
+    if(hash[3] < target)
     {
         uint32_t idx = atomicInc( d_res_count, 0xFFFFFFFF );
         
@@ -356,7 +356,7 @@ void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint64_t startNonce, xmrig::Al
     }
 }
 
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target1, uint64_t target2, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo)
+void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo)
 {
     int threadsperblock = 128;
     uint32_t wsize = ctx->device_blocks * ctx->device_threads;
@@ -368,10 +368,10 @@ void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t ta
     CUDA_CHECK(ctx->device_id, cudaMemset(ctx->d_result_count, 0, sizeof(uint32_t)));
 
     if (algo == xmrig::CRYPTONIGHT_HEAVY) {
-        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<xmrig::CRYPTONIGHT_HEAVY><<<grid, block >>>( wsize, target1, target2, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 ));
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<xmrig::CRYPTONIGHT_HEAVY><<<grid, block >>>( wsize, target,  ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 ));
     } else {
         // fallback for all other algorithms
-        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<xmrig::CRYPTONIGHT><<<grid, block >>>( wsize, target1, target2, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 ));
+        CUDA_CHECK_KERNEL(ctx->device_id, cryptonight_extra_gpu_final<xmrig::CRYPTONIGHT><<<grid, block >>>( wsize, target, ctx->d_result_count, ctx->d_result_nonce, ctx->d_ctx_state,ctx->d_ctx_key2 ));
     }
 
     CUDA_CHECK(ctx->device_id, cudaMemcpy(rescount, ctx->d_result_count, sizeof(uint32_t), cudaMemcpyDeviceToHost));

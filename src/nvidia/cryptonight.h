@@ -71,4 +71,4 @@ int cryptonight_gpu_init(nvid_ctx *ctx, xmrig::Algo algo);
 void cryptonight_extra_cpu_set_data(nvid_ctx *ctx, const void *data, uint32_t len);
 void cryptonight_extra_cpu_prepare(nvid_ctx* ctx, uint64_t startNonce, xmrig::Algo algo);
 void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t moneroNonce);
-void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target1, uint64_t target2, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo);
+void cryptonight_extra_cpu_final(nvid_ctx* ctx, uint64_t startNonce, uint64_t target, uint32_t* rescount, uint64_t *resnonce, xmrig::Algo algo);
