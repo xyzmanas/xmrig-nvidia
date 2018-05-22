@@ -228,7 +228,7 @@ template<size_t ITERATIONS, uint32_t MEM, uint32_t MASK, xmrig::Algo ALGO, uint8
 __launch_bounds__( XMR_STAK_THREADS * 4 )
 #endif
 __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int partidx, uint32_t * d_long_state, uint32_t * d_ctx_a, uint32_t * d_ctx_b, uint32_t * d_ctx_state,
-        uint32_t moneroNonce, uint32_t * __restrict__ d_input )
+        uint32_t startNonce, uint32_t * __restrict__ d_input, uint32_t moneroNonce)
 {
     __shared__ uint32_t sharedMemory[1024];
 
@@ -237,7 +237,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
     __syncthreads( );
 
     const int thread = ( blockDim.x * blockIdx.x + threadIdx.x ) >> 2;
-    const uint32_t nonce = moneroNonce;
+    // const uint32_t nonce = startNonce + thread;
     const int sub = threadIdx.x & 3;
     const int sub2 = sub & 2;
 
@@ -265,7 +265,7 @@ __global__ void cryptonight_core_gpu_phase2( int threads, int bfactor, int parti
         uint32_t * state = d_ctx_state + thread * 50;
         tweak1_2[0] = (d_input[8] >> 24) | (d_input[9] << 8);
         tweak1_2[0] ^= state[48];
-        tweak1_2[1] = nonce;
+        tweak1_2[1] = moneroNonce;
         tweak1_2[1] ^= state[49];
     }
 
@@ -420,7 +420,7 @@ __global__ void cryptonight_core_gpu_phase3( int threads, int bfactor, int parti
 }
 
 template<size_t ITERATIONS, uint32_t MASK, uint32_t MEM, xmrig::Algo ALGO, uint8_t VARIANT>
-void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
+void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce, uint32_t moneroNonce)
 {
     dim3 grid( ctx->device_blocks );
     dim3 block( ctx->device_threads );
@@ -467,7 +467,8 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
             ctx->d_ctx_b,
             ctx->d_ctx_state,
             nonce,
-            ctx->d_input
+            ctx->d_input,
+            moneroNonce
             )
         );
 
@@ -496,31 +497,31 @@ void cryptonight_core_gpu_hash(nvid_ctx* ctx, uint32_t nonce)
 }
 
 
-void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t moneroNonce)
+void cryptonight_gpu_hash(nvid_ctx *ctx, xmrig::Algo algo, int variant, uint32_t startNonce, uint32_t moneroNonce)
 {
     using namespace xmrig;
 
     switch (algo) {
     case CRYPTONIGHT:
         if (variant > 0) {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 1>(ctx, moneroNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 1>(ctx, startNonce, moneroNonce);
         }
         else {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 0>(ctx, moneroNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_ITER, CRYPTONIGHT_MASK, CRYPTONIGHT_MEMORY / 4, CRYPTONIGHT, 0>(ctx, startNonce, moneroNonce);
         }
         break;
 
     case CRYPTONIGHT_LITE:
         if (variant > 0) {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 1>(ctx, moneroNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 1>(ctx, startNonce, moneroNonce);
         }
         else {
-            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 0>(ctx, moneroNonce);
+            cryptonight_core_gpu_hash<CRYPTONIGHT_LITE_ITER, CRYPTONIGHT_LITE_MASK, CRYPTONIGHT_LITE_MEMORY / 4, CRYPTONIGHT_LITE, 0>(ctx, startNonce, moneroNonce);
         }
         break;
 
     case CRYPTONIGHT_HEAVY:
-        cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY / 4, CRYPTONIGHT_HEAVY, 0>(ctx, moneroNonce);
+        cryptonight_core_gpu_hash<CRYPTONIGHT_HEAVY_ITER, CRYPTONIGHT_HEAVY_MASK, CRYPTONIGHT_HEAVY_MEMORY / 4, CRYPTONIGHT_HEAVY, 0>(ctx, startNonce, moneroNonce);
         break;
     }
 }

@@ -14,6 +14,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 #ifndef __PROTOCOL_H__
 #define __PROTOCOL_H__
 
@@ -23,7 +24,6 @@ public:
     static const int JOB_ID = 0;
     static const int BLOB = 1;
     static const int TARGET = 2;
-    static const int MINER_CNT = 3;
 };
 
 class LEN
@@ -38,7 +38,8 @@ public:
     
     static const int BLOB = 72;
     static const int PREHASH = 64;
-    static const int NONCE = 8;
+    static const int JOBID = 4;
+    static const int HYCON_NONCE = 8;
     static const int DIFF = 3;
     static const int RESULT = 32;
     static const int DIFF_ONE = 8;

@@ -175,11 +175,11 @@ int64_t Client::submit(const JobResult &result)
     const char *nonce = result.nonce;
     const char *data  = result.result;
 #   else
-
+    
     char nonce[LEN::NONCE_HEX + 1];
     char data[LEN::RESULT_HEX + 1];
 
-    Job::toHexLittle(reinterpret_cast<const unsigned char*>(&result.nonce), LEN::NONCE, nonce);
+    Job::toHex(reinterpret_cast<const unsigned char*>(&result.nonce), LEN::HYCON_NONCE, nonce);
     nonce[LEN::NONCE_HEX] = '\0';
 
     Job::toHex(result.result, LEN::RESULT, data);
@@ -194,7 +194,7 @@ int64_t Client::submit(const JobResult &result)
 #   else
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
 #   endif
-
+    LOG_INFO("[SUBMIT] NONCE: %s , RESULT: %s",nonce, data);
     return send(size);
 }
 
@@ -247,22 +247,25 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     Job job(m_id, m_nicehash, m_url.algo(), m_url.variant());
 #   endif
 
-    if (!job.setJobId(params[NOTI::JOB_ID].GetInt(), params[NOTI::MINER_CNT].GetInt())) { 
-        *code = 3;
-        return false;
+    if (!params[NOTI::JOB_ID].IsUint()) {
+         *code = 3;
+         return false;
      }
+    job.setJobId(params[NOTI::JOB_ID].GetUint());
 
     if (!job.setBlob(params[NOTI::BLOB].GetString())) {
         *code = 4;
         return false;
     }
-
+    
     if (!job.setTarget(params[NOTI::TARGET].GetString())) {
         *code = 5;
         return false;
     }
-
+    
     if (m_job != job) {
+        LOG_INFO("[PARAMS] NEWJOB jobID: %d , target %s , blob= %s \n", 
+        params[NOTI::JOB_ID].GetUint(), params[NOTI::TARGET].GetString() , params[NOTI::BLOB].GetString());
         m_jobs++;
         m_job = std::move(job);
         return true;
@@ -271,11 +274,11 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     if (m_jobs == 0) { // https://github.com/xmrig/xmrig/issues/459
         return false;
     }
-
+    
     if (!m_quiet) {
         LOG_WARN("[%s:%u] duplicate job received, reconnect", m_url.host(), m_url.port());
     }
-
+    
     close();
     return false;
 }
@@ -392,7 +395,7 @@ void Client::login()
 {
     sendSubscribe();
  
-    sendAuthorize();   
+    sendAuthorize();
 }
 
 
@@ -438,7 +441,7 @@ void Client::parse(char *line, size_t len)
         parseResponse(id.GetInt64(), doc["result"], doc["error"]);
     }
     else {
-        parseNotification(doc["method"].GetString(), doc["params"], doc["error"]);
+        parseNotification(doc["method"].GetString(), doc["params"], doc["error"]);        
     }
 }
 
@@ -519,7 +522,7 @@ void Client::parseResponse(int64_t id, const rapidjson::Value &result, const rap
     if (it != m_results.end()) {
         it->second.done();
 
-        if(result.GetBool()) {
+       if(result.GetBool()) {
             m_listener->onResultAccepted(this, it->second, nullptr);    
         } else {
             m_listener->onResultAccepted(this, it->second, "Nonce is different.");

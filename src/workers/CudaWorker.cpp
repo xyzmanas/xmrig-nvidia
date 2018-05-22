@@ -33,7 +33,6 @@
 #include "workers/GpuThread.h"
 #include "workers/Handle.h"
 #include "workers/Workers.h"
-#include "log/Log.h"
 
 
 CudaWorker::CudaWorker(Handle *handle) :
@@ -84,11 +83,11 @@ void CudaWorker::start()
         cryptonight_extra_cpu_set_data(&m_ctx, m_job.blob(), LEN::BLOB);
 
         while (!Workers::isOutdated(m_sequence)) {
-            uint64_t foundNonce[10];
+            uint32_t foundNonce[10];
             uint32_t foundCount;
   
             cryptonight_extra_cpu_prepare(&m_ctx, m_nonce, m_algorithm);
-            cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.variant(), *(m_job.moneroNonce()));
+            cryptonight_gpu_hash(&m_ctx, m_algorithm, m_job.variant(), m_nonce, *(m_job.moneroNonce()));
             cryptonight_extra_cpu_final(&m_ctx, m_nonce, m_job.target(), &foundCount, foundNonce, m_algorithm);
 
             for (size_t i = 0; i < foundCount; i++) {
@@ -138,10 +137,10 @@ void CudaWorker::consumeJob()
     m_job.setThreadId(m_id);
 
     if (m_job.isNicehash()) {
-        m_nonce = (*m_job.nonce() & 0xff000000U) + (0xffffffffffffffU / m_threads * m_id);
+        m_nonce = (*m_job.nonce() & 0xff000000U) + (0xffffffU / m_threads * m_id);
     }
     else {
-        m_nonce = m_job.jobId() + (m_job.jobUnit() / m_threads * m_id);
+        m_nonce = 0xffffffffU / m_threads * m_id;
     }
 }
 

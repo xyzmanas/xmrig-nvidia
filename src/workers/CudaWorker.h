@@ -7,7 +7,6 @@
  * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
  * Copyright 2018      Lee Clagett <https://github.com/vtnerd>
  * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
- * Copyright 2018      Team-Hycon  <https://github.com/Team-Hycon>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -64,7 +63,7 @@ private:
     nvid_ctx m_ctx;
     std::atomic<uint64_t> m_hashCount;
     std::atomic<uint64_t> m_timestamp;
-    uint64_t m_nonce;
+    uint32_t m_nonce;
     uint32_t m_pausedNonce;
     uint64_t m_count;
     uint64_t m_sequence;
