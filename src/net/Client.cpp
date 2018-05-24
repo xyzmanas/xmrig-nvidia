@@ -194,7 +194,6 @@ int64_t Client::submit(const JobResult &result)
 #   else
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
 #   endif
-    LOG_INFO("[SUBMIT] NONCE: %s , RESULT: %s",nonce, data);
     return send(size);
 }
 
@@ -257,15 +256,15 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         *code = 4;
         return false;
     }
-    
+
     if (!job.setTarget(params[NOTI::TARGET].GetString())) {
         *code = 5;
         return false;
     }
-    
+
+    job.setVariant(xmrig::VARIANT_V1);
+
     if (m_job != job) {
-        LOG_INFO("[PARAMS] NEWJOB jobID: %d , target %s , blob= %s \n", 
-        params[NOTI::JOB_ID].GetUint(), params[NOTI::TARGET].GetString() , params[NOTI::BLOB].GetString());
         m_jobs++;
         m_job = std::move(job);
         return true;
@@ -394,7 +393,7 @@ void Client::connect(sockaddr *addr)
 void Client::login()
 {
     sendSubscribe();
- 
+
     sendAuthorize();
 }
 
@@ -441,7 +440,7 @@ void Client::parse(char *line, size_t len)
         parseResponse(id.GetInt64(), doc["result"], doc["error"]);
     }
     else {
-        parseNotification(doc["method"].GetString(), doc["params"], doc["error"]);        
+        parseNotification(doc["method"].GetString(), doc["params"], doc["error"]);
     }
 }
 

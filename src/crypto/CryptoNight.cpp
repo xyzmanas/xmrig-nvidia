@@ -46,12 +46,6 @@ bool CryptoNight::hash(const Job &job, JobResult &result, cryptonight_ctx *ctx)
 {
     fn(job.variant())(job.blob(), LEN::BLOB, result.result, ctx);
     uint64_t* hash = reinterpret_cast<uint64_t*>(&result.result);
-    
-    char blob[LEN::BLOB_HEX + 1]="";
-    blob[LEN::BLOB_HEX] = 0;
-    job.toHex(job.blob(),LEN::BLOB, blob);
-    LOG_INFO("[CHECK with CPU]  blob : %s ", blob );
-    LOG_INFO("target: %016llx, result: %016llx %016llx %016llx %016llx, HYCON NONCE: %016llx", job.target(), hash[0],hash[1],hash[2],hash[3], result.nonce );
     return hash[3] < job.target();
 }
 

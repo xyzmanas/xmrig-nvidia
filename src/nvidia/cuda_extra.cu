@@ -257,12 +257,6 @@ __global__ void cryptonight_extra_gpu_final( int threads, uint64_t target, uint3
 
     if ( hash[3] < target )
     {
-        
-        printf("[GPU] target %016llx, hash result  ", target);
-        for(int i =0;i<32; ++i){
-            printf("%02x",( (uint8_t *)(hash))[i]);
-        }
-        printf("\n");
         uint32_t idx = atomicInc( d_res_count, 0xFFFFFFFF );
 
         if(idx < 10)
