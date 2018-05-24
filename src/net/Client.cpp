@@ -186,8 +186,8 @@ int64_t Client::submit(const JobResult &result)
     data[LEN::RESULT_HEX] = '\0';
 #   endif
 
-    const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"method\":\"mining.submit\",\"id\":%" PRIu64 ",\"params\":{\"id\":\"%s\",\"job_id\":\"%s\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
-                                 m_sequence, m_rpcId.data(), result.jobId.data(), nonce, data);
+    const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"method\":\"mining.submit\",\"id\":%" PRIu64 ",\"params\":{\"id\":\"%s\",\"job_id\":\"%d\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
+                                 m_sequence, m_rpcId.data(), result.jobId, nonce, data);
 
 #   ifdef XMRIG_PROXY_PROJECT
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff(), result.id);
@@ -246,11 +246,11 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
     Job job(m_id, m_nicehash, m_url.algo(), m_url.variant());
 #   endif
 
-    if (!params[NOTI::JOB_ID].IsUint()) {
+    if (!params[NOTI::JOB_PREFIX].IsUint()) {
          *code = 3;
          return false;
      }
-    job.setJobId(params[NOTI::JOB_ID].GetUint());
+    job.setPrefix(params[NOTI::JOB_PREFIX].GetUint());
 
     if (!job.setBlob(params[NOTI::BLOB].GetString())) {
         *code = 4;
@@ -261,6 +261,12 @@ bool Client::parseJob(const rapidjson::Value &params, int *code)
         *code = 5;
         return false;
     }
+
+    if (!params[NOTI::JOB_ID].IsUint()) {
+        *code = 6;
+        return false;
+    }
+    job.setJobId(params[NOTI::JOB_ID].GetUint());
 
     job.setVariant(xmrig::VARIANT_V1);
 
