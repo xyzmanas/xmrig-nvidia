@@ -35,7 +35,6 @@
 #include "net/JobResult.h"
 #include "Options.h"
 #include "xmrig.h"
-#include "log/Log.h"
 
 
 xmrig::Algo CryptoNight::m_algorithm = xmrig::CRYPTONIGHT;
