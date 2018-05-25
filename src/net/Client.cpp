@@ -186,7 +186,7 @@ int64_t Client::submit(const JobResult &result)
     data[LEN::RESULT_HEX] = '\0';
 #   endif
 
-    const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"method\":\"mining.submit\",\"id\":%" PRIu64 ",\"params\":{\"id\":\"%s\",\"job_id\":\"%d\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
+    const size_t size = snprintf(m_sendBuf, sizeof(m_sendBuf), "{\"method\":\"mining.submit\",\"id\":%" PRIu64 ",\"params\":{\"id\":\"%s\",\"job_id\":\"%u\",\"nonce\":\"%s\",\"result\":\"%s\"}}\n",
                                  m_sequence, m_rpcId.data(), result.jobId, nonce, data);
 
 #   ifdef XMRIG_PROXY_PROJECT
