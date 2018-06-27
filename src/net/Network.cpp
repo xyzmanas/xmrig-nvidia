@@ -61,9 +61,9 @@ Network::Network(const Options *options) :
         m_strategy = new SinglePoolStrategy(pools.front(), options->retryPause(), this);
     }
 
-    // if (m_options->donateLevel() > 0) {
-    //     m_donate = new DonateStrategy(options->donateLevel(), options->pools().front()->user(), options->algorithm(), this);
-    // }
+    if (m_options->donateLevel() > 0) {
+       m_donate = new DonateStrategy(options->donateLevel(), options->pools().front()->user(), options->algorithm(), this);
+    }
 
     m_timer.data = this;
     uv_timer_init(uv_default_loop(), &m_timer);
