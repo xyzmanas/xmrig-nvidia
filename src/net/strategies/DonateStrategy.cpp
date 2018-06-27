@@ -56,15 +56,15 @@ DonateStrategy::DonateStrategy(int level, const char *user, xmrig::Algo algo, IS
     Job::toHex(hash, 32, userId);
 
     if (algo == xmrig::CRYPTONIGHT) {
-        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "400", true, false));
-        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "400", true, false));
-        m_pools.push_back(Pool(kDonatePool2, 9081, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "400", true, false));
+        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "600", true, false));
+        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "600", true, false));
+        m_pools.push_back(Pool(kDonatePool2, 9081, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "600", true, false));
     }
     else if (algo == xmrig::CRYPTONIGHT_HEAVY) {
-        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "400", true, false));
+        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "600", true, false));
     }
     else {
-        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "400", true, false));
+        m_pools.push_back(Pool(kDonatePool1, 8888, "H2EqYsxSLAc2zKhXzCpWVfkfdkcDQM7he", "600", true, false));
     }
 
     for (Pool &pool : m_pools) {
